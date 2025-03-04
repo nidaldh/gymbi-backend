@@ -57,7 +57,7 @@ class OrderController extends Controller
                         $productErrors[$productData['productId']] = 'المنتج غير موجود';
                         continue;
                     }
-                    $product_id = $product->{'_id'};
+                    $product_id = $product->id;
                 }
 
                 if ($product->quantity < $productData['quantity'] && ($product->isCountable)) {
@@ -276,7 +276,7 @@ class OrderController extends Controller
                     $newQuantity = $product->quantity + $orderProduct->quantity;
                     $newCostPrice = (($product->quantity * $product->costPrice) + ($orderProduct->quantity * $orderProduct->costPrice)) / $newQuantity;
 
-                    $old_product_info[$product->{'_id'}] = [
+                    $old_product_info[$product->id] = [
                         'quantity' => $product->quantity,
                         'costPrice' => $product->costPrice
                     ];
@@ -292,7 +292,7 @@ class OrderController extends Controller
                     }
 
                     ProductHistory::create([
-                        'product_id' => $product->{'_id'},
+                        'product_id' => $product->id,
                         'store_id' => $store_id,
                         'description' => $diff,
                         'user_id' => auth()->user()->id,
@@ -394,7 +394,7 @@ class OrderController extends Controller
                     $product->save();
 
                     ProductHistory::create([
-                        'product_id' => $product->{'_id'},
+                        'product_id' => $product->id,
                         'store_id' => $store_id,
                         'description' => "تحديث طلبية : تغيير الكمية من {$oldProductQuantity} إلى {$product->quantity}",
                         'user_id' => auth()->user()->id,
@@ -414,7 +414,7 @@ class OrderController extends Controller
                         $product->save();
 
                         ProductHistory::create([
-                            'product_id' => $product->{'_id'},
+                            'product_id' => $product->id,
                             'store_id' => $store_id,
                             'description' => "إلغاء منتج من الطلبية : تغيير الكمية من {$oldQuantity} إلى {$product->quantity}",
                             'user_id' => auth()->user()->id,

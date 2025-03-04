@@ -96,7 +96,7 @@ class PurchaseController extends Controller
             if ($request->has('products')) {
                 foreach ($request->products as $productData) {
                     if (isset($productData['product_id'])) {
-                        $product = ProductModel::where('_id', $productData['product_id'])->first();
+                        $product = ProductModel::find($productData['product_id']);
                         if ($product) {
                             PurchaseOrderProductModel::create([
                                 'purchase_order_id' => $purchase->id,
@@ -108,7 +108,7 @@ class PurchaseController extends Controller
 
                             $newCostPrice = ($product->costPrice * $product->quantity + $productData['price'] * $productData['quantity']) / ($product->quantity + $productData['quantity']);
                             $newCostPrice = round($newCostPrice, 3);
-                            $old_products[$product->{'_id'}] = [
+                            $old_products[$product->id] = [
                                 'quantity' => $product->quantity,
                                 'costPrice' => $product->costPrice,
                             ];
@@ -119,7 +119,7 @@ class PurchaseController extends Controller
                             $description = 'تم شراء ' . $productData['quantity'] . ' بسعر ' . $productData['price'] . ' للقطعة' . "\n" . 'المورد: ' . $vendor->name;
                             ProductHistory::create([
                                 'type' => 'purchase',
-                                'product_id' => $product->{'_id'},
+                                'product_id' => $product->id,
                                 'description' => $description,
                                 'store_id' => $store_id,
                                 'user_id' => auth()->user()->id,
@@ -134,7 +134,7 @@ class PurchaseController extends Controller
                         ]);
                         PurchaseOrderProductModel::create([
                             'purchase_order_id' => $purchase->id,
-                            'product_id' => $new_product->{'_id'},
+                            'product_id' => $new_product->id,
                             'product_name' => $productData['product_name'],
                             'quantity' => $productData['quantity'],
                             'price' => $productData['price'],
@@ -143,7 +143,7 @@ class PurchaseController extends Controller
 
                         ProductHistory::create([
                             'type' => 'purchase',
-                            'product_id' => $new_product->{'_id'},
+                            'product_id' => $new_product->id,
                             'description' => $description,
                             'store_id' => $store_id,
                             'user_id' => auth()->user()->id,
@@ -218,7 +218,7 @@ class PurchaseController extends Controller
                         // Update existing product
                         $purchaseProduct = $existingProducts->get($productData['id']);
                         if ($purchaseProduct) {
-                            $product = ProductModel::where('_id', $productData['product_id'])->first();
+                            $product = ProductModel::find($productData['product_id']);
                             if ($product) {
                                 $diff = '';
                                 if ($purchaseProduct->quantity != $productData['quantity']) {
@@ -236,7 +236,7 @@ class PurchaseController extends Controller
                                 if (!empty($diff)) {
                                     ProductHistory::create([
                                         'type' => 'purchase_update',
-                                        'product_id' => $product->{'_id'},
+                                        'product_id' => $product->id,
                                         'description' => "  تم تعديل المنتج من طلبية الشراء: \n {$diff}",
                                         'store_id' => $store_id,
                                         'user_id' => auth()->user()->id,
@@ -250,7 +250,7 @@ class PurchaseController extends Controller
 
                 foreach ($existingProducts as $existingProduct) {
                     if (!in_array($existingProduct->id, $updatedProductIds)) {
-                        $product = ProductModel::where('_id', $existingProduct->product_id)->first();
+                        $product = ProductModel::find($existingProduct->product_id);
                         if ($product) {
                             $product->update([
                                 'quantity' => $product->quantity - $existingProduct->quantity,
@@ -258,7 +258,7 @@ class PurchaseController extends Controller
 
                             ProductHistory::create([
                                 'type' => 'purchase_remove',
-                                'product_id' => $product->{'_id'},
+                                'product_id' => $product->id,
                                 'description' => "تم حذف المنتج من الطلب: {$existingProduct->quantity} {$product->name}",
                                 'store_id' => $store_id,
                                 'user_id' => auth()->user()->id,

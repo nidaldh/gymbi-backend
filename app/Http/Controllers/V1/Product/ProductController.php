@@ -30,7 +30,7 @@ class ProductController extends Controller
         $product = ProductModel::create($request->all());
 
         ProductHistory::create([
-            'product_id' => $product->{'_id'},
+            'product_id' => $product->id,
             'store_id' => auth()->user()->store_id,
             'user_id' => auth()->user()->id,
             'description' => 'Product created, Details: ' . json_encode($request->all()),
@@ -49,7 +49,7 @@ class ProductController extends Controller
 
     public function show($id)
     {
-        $product = ProductModel::where('_id', $id)->first();
+        $product = ProductModel::find($id);
         if (!$product) {
             return response()->json(['message' => 'Product not found'], 404);
         }
@@ -70,11 +70,9 @@ class ProductController extends Controller
         $updatedData = $product->getAttributes();
         unset($updatedData['updated_at']);
         unset($updatedData['created_at']);
-        unset($updatedData['_id']);
         unset($updatedData['store_id']);
         unset($originalData['updated_at']);
         unset($originalData['created_at']);
-        unset($originalData['_id']);
         unset($originalData['store_id']);
 
         $diff = [];
@@ -93,7 +91,7 @@ class ProductController extends Controller
 
         if (!empty($diff)) {
             ProductHistory::create([
-                'product_id' => $product->{'_id'},
+                'product_id' => $product->id,
                 'store_id' => auth()->user()->store_id,
                 'user_id' => auth()->user()->id,
                 'description' => 'Product updated, Details: ' . json_encode($diff),

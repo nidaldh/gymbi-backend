@@ -128,11 +128,9 @@ class ProductController extends Controller
         $updatedData = $product->getAttributes();
         unset($updatedData['updated_at']);
         unset($updatedData['created_at']);
-        unset($updatedData['_id']);
         unset($updatedData['store_id']);
         unset($originalData['updated_at']);
         unset($originalData['created_at']);
-        unset($originalData['_id']);
         unset($originalData['store_id']);
 
         $diff = "";

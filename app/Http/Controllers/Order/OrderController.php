@@ -55,7 +55,7 @@ class OrderController extends Controller
                         $productErrors[$productData['productId']] = 'المنتج غير موجود';
                         continue;
                     }
-                    $product_id = $product->{'_id'};
+                    $product_id = $product->id;
                 }
 
                 if ($product->quantity < $productData['quantity'] && !(($storeType == StoreType::CAR_WASH || $storeType == StoreType::RESTAURANT) && !$product->countable)) {
@@ -223,9 +223,9 @@ class OrderController extends Controller
 //        $order_products = DB::select('select * from order_products where order_id in (select id from orders where store_id = ?)', [auth()->user()->store_id]);
 
         foreach ($order_products as $order_product) {
-            $product = ProductModel::where('id', $order_product->productId)->first();
+            $product = ProductModel::find( $order_product->productId);
             if ($product) {
-                $order_product->productId = $product->{'_id'};
+                $order_product->productId = $product->id;
                 $order_product->save();
             }
         }
