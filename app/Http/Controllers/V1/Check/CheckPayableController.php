@@ -12,8 +12,8 @@ class CheckPayableController extends Controller
 {
     public function index()
     {
-        $store_id = auth()->user()->store_id;
-        $checks = CheckPayable::where('store_id', $store_id)
+        $gym_id = auth()->user()->gym_id;
+        $checks = CheckPayable::where('gym_id', $gym_id)
             ->orderBy('due_date', 'asc')
             ->get();
 
@@ -46,7 +46,7 @@ class CheckPayableController extends Controller
                 [
                     'check_payable_id' => $check->id,
                     'amount' => -$check->amount,
-                    'store_id' => auth()->user()->store_id,
+                    'gym_id' => auth()->user()->gym_id,
                 ]
             );
             $cash->save();

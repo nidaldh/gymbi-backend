@@ -9,7 +9,7 @@ class OrderRequest extends BaseRequest
         return [
             'totalPrice' => 'required|numeric',
             'totalDiscount' => 'nullable|numeric',
-            'customerId' => 'nullable|exists:customers,id',
+            'customerId' => 'nullable|exists:members,id',
             'paidAmount' => 'nullable|numeric',
             'products' => 'required|array',
 //            'products.*.productId' => 'required',

@@ -18,7 +18,7 @@ class TiresAndRepairsProductModel extends ProductModel
         'editedOn',
         'status',
         'brandName',
-        'store_id',
+        'gym_id',
         'old_id'
     ];
 

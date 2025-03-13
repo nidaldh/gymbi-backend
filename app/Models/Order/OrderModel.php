@@ -4,8 +4,8 @@ namespace App\Models\Order;
 
 use App\Models\CashTransaction;
 use App\Models\CheckReceivable;
-use App\Models\CustomerModel;
-use App\Models\StoreModel;
+use App\Models\MemberModel;
+use App\Models\GymModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,12 +17,11 @@ class OrderModel extends Model
     protected $table = 'orders';
 
     protected $fillable = [
-        'old_id',
         'totalPrice',
         'totalDiscount',
-        'customerId',
+        'member_id',
         'paidAmount',
-        'store_id',
+        'gym_id',
         'totalCost',
         'created_at',
         'unpaid_amount',
@@ -36,9 +35,9 @@ class OrderModel extends Model
         'unpaid_amount' => 'double',
     ];
 
-    public function customer()
+    public function member()
     {
-        return $this->belongsTo(CustomerModel::class, 'customerId');
+        return $this->belongsTo(MemberModel::class, 'member_id');
     }
 
     public function orderProducts()
@@ -58,9 +57,9 @@ class OrderModel extends Model
         $order->save();
     }
 
-    public function store()
+    public function gym()
     {
-        return $this->belongsTo(StoreModel::class, 'store_id');
+        return $this->belongsTo(GymModel::class, 'gym_id');
     }
 
     public function cashTransactions()

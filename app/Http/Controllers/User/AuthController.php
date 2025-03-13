@@ -47,7 +47,7 @@ class AuthController extends Controller
         return $this->prepareUserInfo($user);
     }
 
-    public function userStoreInfo(Request $request): JsonResponse
+    public function userGymInfo(Request $request): JsonResponse
     {
         $user = auth()->user();
 
@@ -141,7 +141,7 @@ class AuthController extends Controller
                 'mobile_number' => $user->mobile_number,
                 'user_type' => $user->user_type,
             ],
-            'store' => $user->store,
+            'gym' => $user->gym,
             'token' => $token,
         ]);
     }

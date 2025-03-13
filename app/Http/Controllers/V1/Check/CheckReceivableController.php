@@ -12,8 +12,8 @@ class CheckReceivableController extends Controller
 {
     public function index()
     {
-        $store_id = auth()->user()->store_id;
-        $checks = CheckReceivable::where('store_id', $store_id)
+        $gym_id = auth()->user()->gym_id;
+        $checks = CheckReceivable::where('gym_id', $gym_id)
             ->where('status', "<>", CheckStatusEnum::CLEARED)
             ->orderBy('due_date', 'asc')
             ->get();
@@ -50,7 +50,7 @@ class CheckReceivableController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate(['status' => 'required|string',]);
-        $store_id = auth()->user()->store_id;
+        $gym_id = auth()->user()->gym_id;
         $check = CheckReceivable::findOrFail($id);
         $check->status = $request->input('status');
         $check->save();
@@ -59,7 +59,7 @@ class CheckReceivableController extends Controller
                 [
                     'check_receivable_id' => $check->id,
                     'amount' => $check->amount,
-                    'store_id' => $store_id,
+                    'gym_id' => $gym_id,
                 ]
             );
             $cash->save();
@@ -70,8 +70,8 @@ class CheckReceivableController extends Controller
 
     public function getAvailableChecks()
     {
-        $store_id = auth()->user()->store_id;
-        $availableChecks = CheckReceivable::where('store_id', $store_id)
+        $gym_id = auth()->user()->gym_id;
+        $availableChecks = CheckReceivable::where('gym_id', $gym_id)
             ->where('status', CheckStatusEnum::PENDING)
             ->orderBy('due_date', 'asc')
             ->get()

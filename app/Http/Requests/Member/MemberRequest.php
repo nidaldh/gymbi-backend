@@ -1,17 +1,19 @@
 <?php
 
-namespace App\Http\Requests\Customer;
+namespace App\Http\Requests\Member;
 
 use App\Http\Requests\BaseRequest;
 
-class CustomerRequest extends BaseRequest
+class MemberRequest extends BaseRequest
 {
 
     public function rules(): array
     {
         return [
             'name' => 'required|string',
-            'phoneNumber' => 'required|string',
+            'mobile' => 'required|string',
+            'date_of_birth' => 'required|date',
+            'gender' => 'required|string',
         ];
     }
 

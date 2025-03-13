@@ -1,15 +1,15 @@
 <?php
 
-use App\Http\Controllers\Order\OrderTransactionController;
 use App\Http\Controllers\V1\CashController;
 use App\Http\Controllers\V1\Check\CheckPayableController;
 use App\Http\Controllers\V1\Check\CheckReceivableController;
-use App\Http\Controllers\V1\CustomerController;
+use App\Http\Controllers\V1\MemberController;
 use App\Http\Controllers\V1\DashboardController;
 use App\Http\Controllers\V1\ExpenseController;
 use App\Http\Controllers\V1\Order\OrderController;
 use App\Http\Controllers\V1\Order\PaymentController;
 use App\Http\Controllers\V1\Product\ProductController;
+use App\Http\Controllers\V1\Subscription\SubscriptionTypeController;
 use App\Http\Controllers\V1\Vendor\PurchaseController;
 use App\Http\Controllers\V1\Vendor\VendorController;
 use App\Http\Controllers\V1\Vendor\VendorPaymentController;
@@ -17,13 +17,18 @@ use App\Http\Controllers\V1\Vendor\VendorPaymentController;
 
 Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
-        Route::middleware('auth:sanctum')->prefix('customers')->group(function () {
-            Route::get('/', [CustomerController::class, 'getCustomers']);
-            Route::post('/', [CustomerController::class, 'addCustomer']);
-            Route::put('/{id}', [CustomerController::class, 'updateCustomer']);
-            Route::delete('/{id}', [CustomerController::class, 'deleteCustomer']);
-            Route::get('/{id}/orders', [CustomerController::class, 'getCustomerOrders']);
-            Route::get('/{id}', [CustomerController::class, 'getCustomerById']);
+        Route::prefix('members')->group(function () {
+            Route::get('/', [MemberController::class, 'index']);
+            Route::post('/', [MemberController::class, 'addMember']);
+            Route::put('/{id}', [MemberController::class, 'updateMember']);
+            Route::delete('/{id}', [MemberController::class, 'deleteMember']);
+            Route::get('/{id}/orders', [MemberController::class, 'getMemberOrders']);
+            Route::get('/{id}', [MemberController::class, 'getMemberById']);
+            Route::group(['prefix' => '{memberId}/subscriptions'], function () {
+                Route::get('/', [MemberController::class, 'getMemberSubscriptions']);
+                Route::post('/', [MemberController::class, 'addSubscription']);
+                Route::delete('/{subscriptionId}', [MemberController::class, 'deleteSubscription']);
+            });
         });
 
         Route::prefix('orders')->group(function () {
@@ -35,20 +40,22 @@ Route::prefix('v1')->group(function () {
 //    Route::post('/changeProductIdToId', [OrderController::class, 'changeProductIdToId']);
         });
 
-        Route::prefix('orders/{order_id}/transactions')->group(function () {
-            Route::post('/', [OrderTransactionController::class, 'addTransaction']);
-            Route::get('/', [OrderTransactionController::class, 'getTransactions']);
-            Route::put('/{id}', [OrderTransactionController::class, 'updateTransaction']);
-            Route::post('/import', [OrderTransactionController::class, 'import']);
-            Route::delete('/{id}', [OrderTransactionController::class, 'deleteTransaction']);
+        Route::group(['prefix' => 'member'], function () {
+            Route::post('{member_id}/payment', [PaymentController::class, 'addMemberPayment']);
+            Route::get('{member_id}/payments', [PaymentController::class, 'getMemberPayments']);
+            Route::delete('{member_id}/payment/{paymentId}', [PaymentController::class, 'deleteMemberPayment']);
         });
 
-
-        Route::group(['prefix' => 'customer'], function () {
-            Route::post('{customerId}/payment', [PaymentController::class, 'addCustomerPayment']);
-            Route::get('{customerId}/payments', [PaymentController::class, 'getCustomerPayments']);
-            Route::delete('{customerId}/payment/{paymentId}', [PaymentController::class, 'deleteCustomerPayment']);
+        Route::prefix('gyms')->group(function () {
+            Route::group(['prefix' => 'subscription-types'], function () {
+                Route::get('/', [SubscriptionTypeController::class, 'index']);
+                Route::get('/{id}', [SubscriptionTypeController::class, 'show']);
+                Route::post('/', [SubscriptionTypeController::class, 'store']);
+                Route::put('/{id}', [SubscriptionTypeController::class, 'update']);
+                Route::delete('/{id}', [SubscriptionTypeController::class, 'destroy']);
+            });
         });
+
 
         Route::group(['prefix' => 'vendor'], function () {
             Route::get('', [VendorController::class, 'index']);
@@ -123,7 +130,6 @@ Route::prefix('v1')->group(function () {
             Route::delete('/{id}', [ProductController::class, 'destroy']);
             Route::get('/{id}/sales', [ProductController::class, 'getProductSales']);
             Route::get('/{id}/history', [ProductController::class, 'getProductHistory']);
-            Route::put('/{id}/update-quantity-cost', [ProductController::class, 'updateProductQuantityAndCost']);
             Route::put(
                 '/{id}/move-quantity-from-warehouse',
                 [ProductController::class, 'moveWarehouseProductToInventory']

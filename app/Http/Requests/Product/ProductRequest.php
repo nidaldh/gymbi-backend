@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Product;
 
-use App\Enums\StoreType;
 use App\Http\Requests\BaseRequest;
 
 class ProductRequest extends BaseRequest

@@ -11,7 +11,7 @@ class WarehouseProductModel extends Model
         'productId',
         'quantity',
         'costPrice',
-        'store_id'
+        'gym_id'
     ];
 
     protected $casts = [

@@ -21,7 +21,7 @@ class CheckPayable extends Model
         'status',
         'due_date',
         'expense_id',
-        'store_id',
+        'gym_id',
         'vendor_id',
     ];
 

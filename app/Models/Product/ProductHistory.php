@@ -2,7 +2,7 @@
 
 namespace App\Models\Product;
 
-use App\Models\StoreModel;
+use App\Models\GymModel;
 use Illuminate\Database\Eloquent\Model;
 
 class ProductHistory extends Model
@@ -11,7 +11,7 @@ class ProductHistory extends Model
 
     protected $fillable = [
         'product_id',
-        'store_id',
+        'gym_id',
         'description',
         'user_id',
         'type',
@@ -23,8 +23,8 @@ class ProductHistory extends Model
         'created_at' => 'datetime:Y-m-d H:i:s',
     ];
 
-    public function store()
+    public function gym()
     {
-        return $this->belongsTo(StoreModel::class);
+        return $this->belongsTo(GymModel::class);
     }
 }

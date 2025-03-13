@@ -16,7 +16,7 @@ class VendorModel extends Model
         'name',
         'phone',
         'debt',
-        'store_id',
+        'gym_id',
     ];
 
     protected $casts = [
@@ -41,9 +41,9 @@ class VendorModel extends Model
         return $this->hasMany(CashTransaction::class, 'vendor_id', 'id');
     }
 
-    public function store()
+    public function gym()
     {
-        return $this->belongsTo(StoreModel::class, 'store_id');
+        return $this->belongsTo(GymModel::class, 'gym_id');
     }
 
 }

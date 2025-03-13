@@ -6,14 +6,14 @@ use App\Enums\CheckStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Models\CashTransaction;
 use App\Models\CheckReceivable;
-use App\Models\CustomerModel;
+use App\Models\MemberModel;
 use App\Models\Order\OrderModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
-    public function addCustomerPayment(Request $request, $customerId)
+    public function addMemberPayment(Request $request, $customerId)
     {
         $request->validate([
 //            'paymentDetails.cash' => 'nullable|numeric',
@@ -26,20 +26,20 @@ class PaymentController extends Controller
         ]);
 
         DB::beginTransaction();
-        $customer = CustomerModel::find($customerId);
+        $customer = MemberModel::find($customerId);
         if (!$customer) {
             return response()->json(['message' => 'Customer not found'], 404);
         }
 
         try {
             $paid_amount = 0;
-            $store_id = auth()->user()->store_id;
+            $gym_id = auth()->user()->gym_id;
 
             if (!empty($request->paymentDetails['cash'])) {
                 $cashTransaction = new CashTransaction([
                     'customer_id' => $customerId,
                     'amount' => $request->paymentDetails['cash'],
-                    'store_id' => $store_id,
+                    'gym_id' => $gym_id,
                 ]);
                 $paid_amount += $request->paymentDetails['cash'];
                 $cashTransaction->save();
@@ -55,7 +55,7 @@ class PaymentController extends Controller
                         'status' => CheckStatusEnum::PENDING,
                         'due_date' => $check['due_date'],
                         'customer_id' => $customerId,
-                        'store_id' => $store_id,
+                        'gym_id' => $gym_id,
                     ]);
                     $paid_amount += $check['amount'];
                     $check_receivable->save();
@@ -78,7 +78,7 @@ class PaymentController extends Controller
 
     private function allocateRemainingAmountToOldOrders($customerId, $remaining_amount): void
     {
-        $old_orders = OrderModel::where('customerId', $customerId)
+        $old_orders = OrderModel::where('member_id', $customerId)
             ->where('unpaid_amount', '>', 0)
             ->orderBy('created_at', 'asc')
             ->get();
@@ -108,7 +108,7 @@ class PaymentController extends Controller
 
     //list all payments of a customer
 
-    public function getCustomerPayments($customerId)
+    public function getMemberPayments($customerId)
     {
         $cashTransactions = CashTransaction::where('customer_id', $customerId)->select(
             'id',
@@ -144,11 +144,11 @@ class PaymentController extends Controller
         return response()->json(['payments' => $payments], 200);
     }
 
-    public function deleteCustomerPayment($customerId, $paymentId)
+    public function deleteMemberPayment($customerId, $paymentId)
     {
-        $store_id = auth()->user()->store_id;
+        $gym_id = auth()->user()->gym_id;
         $payment = CashTransaction::where('customer_id', $customerId)
-            ->where('store_id', $store_id)
+            ->where('gym_id', $gym_id)
             ->find($paymentId);
         if (!$payment) {
             return response()->json(['message' => 'Payment not found'], 404);
@@ -164,7 +164,7 @@ class PaymentController extends Controller
                 }
             }
 
-            $customer = CustomerModel::find($customerId);
+            $customer = MemberModel::find($customerId);
             $customer->debt += $payment->amount;
             $customer->save();
 

@@ -11,12 +11,12 @@ class CashController extends Controller
 {
     public function index(Request $request)
     {
-        $store_id = auth()->user()->store_id;
+        $gym_id = auth()->user()->gym_id;
         $income = 0;
         $outcome = 0;
         $year = $request->year ?? Carbon::now()->year;
         $month = $request->month ?? Carbon::now()->month;
-        $transactions = CashTransaction::where('store_id', $store_id)
+        $transactions = CashTransaction::where('gym_id', $gym_id)
             ->with(['expense', 'vendor', 'customer', 'order'])
             ->whereYear('created_at', $year)
             ->whereMonth('created_at', $month)
@@ -60,8 +60,8 @@ class CashController extends Controller
 
     public function spentCashOnExpenses()
     {
-        $store_id = auth()->user()->store_id;
-        $transactions = CashTransaction::where('store_id', $store_id)
+        $gym_id = auth()->user()->gym_id;
+        $transactions = CashTransaction::where('gym_id', $gym_id)
             ->where('expense_id', '!=', null)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -71,8 +71,8 @@ class CashController extends Controller
 
     public function spentCashOnPurchases()
     {
-        $store_id = auth()->user()->store_id;
-        $transactions = CashTransaction::where('store_id', $store_id)
+        $gym_id = auth()->user()->gym_id;
+        $transactions = CashTransaction::where('gym_id', $gym_id)
             ->where('vendor_id', '!=', null)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -82,8 +82,8 @@ class CashController extends Controller
 
     public function cashFromSales()
     {
-        $store_id = auth()->user()->store_id;
-        $transactions = CashTransaction::where('store_id', $store_id)
+        $gym_id = auth()->user()->gym_id;
+        $transactions = CashTransaction::where('gym_id', $gym_id)
             ->where('sale_id', '!=', null)
             ->orderBy('created_at', 'desc')
             ->get();

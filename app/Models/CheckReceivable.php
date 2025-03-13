@@ -20,7 +20,7 @@ class CheckReceivable extends Model
         'status',
         'due_date',
         'customer_id',
-        'store_id',
+        'gym_id',
     ];
 
     protected $casts = [
@@ -29,7 +29,7 @@ class CheckReceivable extends Model
 
     public function customer()
     {
-        return $this->belongsTo(CustomerModel::class, 'customer_id');
+        return $this->belongsTo(MemberModel::class, 'customer_id');
     }
 
     public function bank()

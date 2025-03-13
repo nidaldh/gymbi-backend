@@ -2,15 +2,12 @@
 
 namespace App\Http\Controllers\V1\Product;
 
-use App\Enums\StoreType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BaseRequest;
 use App\Http\Requests\Product\ProductRequest;
 use App\Models\Order\OrderProductModel;
 use App\Models\Product\ProductHistory;
 use App\Models\Product\ProductModel;
-use App\Models\Product\RetailShopProductModel;
-use App\Models\Product\TiresAndRepairsProductModel;
 use App\Models\Product\WarehouseProductModel;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Excel;
@@ -31,7 +28,7 @@ class ProductController extends Controller
 
         ProductHistory::create([
             'product_id' => $product->id,
-            'store_id' => auth()->user()->store_id,
+            'gym_id' => auth()->user()->gym_id,
             'user_id' => auth()->user()->id,
             'description' => 'Product created, Details: ' . json_encode($request->all()),
             'type' => 'insert',
@@ -70,10 +67,10 @@ class ProductController extends Controller
         $updatedData = $product->getAttributes();
         unset($updatedData['updated_at']);
         unset($updatedData['created_at']);
-        unset($updatedData['store_id']);
+        unset($updatedData['gym_id']);
         unset($originalData['updated_at']);
         unset($originalData['created_at']);
-        unset($originalData['store_id']);
+        unset($originalData['gym_id']);
 
         $diff = [];
         foreach ($originalData as $key => $value) {
@@ -92,7 +89,7 @@ class ProductController extends Controller
         if (!empty($diff)) {
             ProductHistory::create([
                 'product_id' => $product->id,
-                'store_id' => auth()->user()->store_id,
+                'gym_id' => auth()->user()->gym_id,
                 'user_id' => auth()->user()->id,
                 'description' => 'Product updated, Details: ' . json_encode($diff),
                 'type' => 'update'
@@ -114,41 +111,6 @@ class ProductController extends Controller
         return response()->json(['message' => 'Product deleted successfully'], 200);
     }
 
-    public function updateProductQuantityAndCost(BaseRequest $request, $id)
-    {
-        $request->validate([
-            'quantity' => 'required|integer|min:1',
-            'costPrice' => 'required|numeric',
-        ]);
-
-        $storeType = auth()->user()->store->store_type;
-
-        if ($storeType === StoreType::RETAIL) {
-            $product = RetailShopProductModel::find($id);
-        } elseif ($storeType === StoreType::TIRES) {
-            $product = TiresAndRepairsProductModel::find($id);
-        } else {
-            return response()->json(['message' => 'Invalid store type'], 400);
-        }
-
-        if (!$product) {
-            return response()->json(['message' => 'Product not found'], 404);
-        }
-
-        $newQuantity = $product->quantity + $request->quantity;
-        $newCostPrice = (($product->quantity * $product->costPrice) + ($request->quantity * $request->costPrice)) / $newQuantity;
-
-        $product->update([
-            'quantity' => $newQuantity,
-            'costPrice' => $newCostPrice,
-            'editedBy' => auth()->user()->id,
-        ]);
-
-        return response()->json(
-            ['message' => 'Product quantity and cost updated successfully', 'product' => $product],
-            200
-        );
-    }
 
     public function moveWarehouseProductToInventory(BaseRequest $request, $id)
     {
@@ -188,12 +150,12 @@ class ProductController extends Controller
     {
         $startDate = $request->input('start_date') ?? now()->startOfMonth();
         $endDate = $request->input('end_date', now());
-        $store_id = auth()->user()->store_id;
+        $gym_id = auth()->user()->gym_id;
 
-        $sales = OrderProductModel::whereHas('order', function ($query) use ($startDate, $endDate, $store_id) {
+        $sales = OrderProductModel::whereHas('order', function ($query) use ($startDate, $endDate, $gym_id) {
             $query->whereRaw('date(created_at) >= date(?)', [$startDate])
                 ->whereRaw('date(created_at) <= date(?)', [$endDate]);
-            $query->where('store_id', $store_id);
+            $query->where('gym_id', $gym_id);
         })->selectRaw('productId, name, SUM(quantity) as total_quantity, SUM(price * quantity) as total_sales')
             ->groupBy('productId', 'name')
             ->orderByDesc('total_quantity')
@@ -206,12 +168,12 @@ class ProductController extends Controller
     {
         $startDate = $request->input('start_date') ?? now()->startOfMonth();
         $endDate = $request->input('end_date', now());
-        $store_id = auth()->user()->store_id;
+        $gym_id = auth()->user()->gym_id;
 
-        $sales = OrderProductModel::whereHas('order', function ($query) use ($startDate, $endDate, $store_id) {
+        $sales = OrderProductModel::whereHas('order', function ($query) use ($startDate, $endDate, $gym_id) {
             $query->whereRaw('date(created_at) >= date(?)', [$startDate])
                 ->whereRaw('date(created_at) <= date(?)', [$endDate]);
-            $query->where('store_id', $store_id);
+            $query->where('gym_id', $gym_id);
         })
             ->where('productId', $id)
             ->selectRaw('quantity, (price * quantity) as total_sales,date(created_at) as date')

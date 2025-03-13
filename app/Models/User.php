@@ -17,7 +17,7 @@ class User extends Authenticatable
         'mobile_number',
         'password',
         'mobile_number_verified_at',
-        'store_id', // Add this line
+        'gym_id', // Add this line
         'user_type',
     ];
 
@@ -31,8 +31,8 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    public function store()
+    public function gym()
     {
-        return $this->belongsTo(StoreModel::class);
+        return $this->belongsTo(GymModel::class);
     }
 }

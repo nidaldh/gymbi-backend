@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CashTransaction;
 use App\Models\CheckPayable;
 use App\Models\CheckReceivable;
-use App\Models\CustomerModel;
+use App\Models\MemberModel;
 use App\Models\Expense\ExpenseModel;
 use App\Models\VendorModel;
 use App\Services\DashboardService;
@@ -19,17 +19,17 @@ class DashboardController extends Controller
 
     public function index()
     {
-        $storeId = auth()->user()->store_id;
-        $total_cash = CashTransaction::where('store_id', $storeId)->sum('amount');
-        $total_customer_debt = CustomerModel::where('store_id', $storeId)->sum('debt');
-        $total_vendor_debt = VendorModel::where('store_id', $storeId)
+        $gymId = auth()->user()->gym_id;
+        $total_cash = CashTransaction::where('gym_id', $gymId)->sum('amount');
+        $total_customer_debt = MemberModel::where('gym_id', $gymId)->sum('debt');
+        $total_vendor_debt = VendorModel::where('gym_id', $gymId)
             ->where('debt', '>', 0)
             ->sum('debt');
-        $total_payable_checks = CheckPayable::where('store_id', $storeId)
+        $total_payable_checks = CheckPayable::where('gym_id', $gymId)
             ->where('status', CheckStatusEnum::PENDING)->sum('amount');
-        $total_receivable_checks = CheckReceivable::where('store_id', $storeId)
+        $total_receivable_checks = CheckReceivable::where('gym_id', $gymId)
             ->where('status', CheckStatusEnum::PENDING)->sum('amount');
-        $total_unpaid_expenses = ExpenseModel::where('store_id', $storeId)
+        $total_unpaid_expenses = ExpenseModel::where('gym_id', $gymId)
             ->sum('unpaid_amount');
 
         return response()->json([
@@ -44,40 +44,40 @@ class DashboardController extends Controller
 
     public function getMonthlyExpenses(Request $request)
     {
-        $storeId = auth()->user()->store_id;
-        $dashboard = new DashboardService($storeId);
+        $gymId = auth()->user()->gym_id;
+        $dashboard = new DashboardService($gymId);
         $monthlyExpenses = $dashboard->getMonthlyExpenses();
         return response()->json(['monthly_expenses' => $monthlyExpenses]);
     }
 
     public function getMonthlySales(Request $request)
     {
-        $storeId = auth()->user()->store_id;
-        $dashboard = new DashboardService($storeId);
+        $gymId = auth()->user()->gym_id;
+        $dashboard = new DashboardService($gymId);
         $monthlySales = $dashboard->getMonthlySales();
         return response()->json(['monthly_sales' => $monthlySales]);
     }
 
     public function getMonthlyPurchases(Request $request)
     {
-        $storeId = auth()->user()->store_id;
-        $dashboard = new DashboardService($storeId);
+        $gymId = auth()->user()->gym_id;
+        $dashboard = new DashboardService($gymId);
         $monthlyPurchases = $dashboard->getMonthlyPurchases();
         return response()->json(['monthly_purchases' => $monthlyPurchases]);
     }
 
     public function getTotalProducts(Request $request)
     {
-        $storeId = auth()->user()->store_id;
-        $dashboard = new DashboardService($storeId);
+        $gymId = auth()->user()->gym_id;
+        $dashboard = new DashboardService($gymId);
         $totalProducts = $dashboard->getTotalProducts();
         return response()->json(['total_products' => $totalProducts]);
     }
 
     public function getTotalVendors(Request $request)
     {
-        $storeId = auth()->user()->store_id;
-        $dashboard = new DashboardService($storeId);
+        $gymId = auth()->user()->gym_id;
+        $dashboard = new DashboardService($gymId);
         $totalVendors = $dashboard->getTotalVendors();
         return response()->json(['total_vendors' => $totalVendors]);
     }

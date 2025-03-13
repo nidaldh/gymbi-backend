@@ -4,7 +4,7 @@ namespace App\Models\Expense;
 
 use App\Models\CashTransaction;
 use App\Models\CheckPayable;
-use App\Models\StoreModel;
+use App\Models\GymModel;
 use Illuminate\Database\Eloquent\Model;
 
 class ExpenseModel extends Model
@@ -17,7 +17,7 @@ class ExpenseModel extends Model
         'category',
         'date',
         'total',
-        'store_id',
+        'gym_id',
         'description',
         'paid_amount',
         'unpaid_amount',
@@ -40,9 +40,9 @@ class ExpenseModel extends Model
         return $this->hasMany(CheckPayable::class, 'expense_id');
     }
 
-    public function store()
+    public function gym()
     {
-        return $this->belongsTo(StoreModel::class, 'store_id');
+        return $this->belongsTo(GymModel::class, 'gym_id');
     }
 
     public function cashTransactions()

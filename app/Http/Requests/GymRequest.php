@@ -3,13 +3,13 @@
 namespace App\Http\Requests;
 
 
-class StoreRequest extends BaseRequest
+class GymRequest extends BaseRequest
 {
 
     public function rules(): array
     {
         return [
-            'store_name' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
         ];
     }
 }

@@ -19,7 +19,7 @@ class CashTransaction extends Model
         'check_receivable_id',
         'check_payable_id',
         'amount',
-        'store_id',
+        'gym_id',
         'vendor_id',
         'notes',
         'order_id',
@@ -31,7 +31,7 @@ class CashTransaction extends Model
 
     public function customer()
     {
-        return $this->belongsTo(CustomerModel::class, 'customer_id');
+        return $this->belongsTo(MemberModel::class, 'customer_id');
     }
 
     public function expense()
@@ -49,9 +49,9 @@ class CashTransaction extends Model
         return $this->belongsTo(CheckPayable::class, 'check_payable_id');
     }
 
-    public function store()
+    public function gym()
     {
-        return $this->belongsTo(StoreModel::class, 'store_id');
+        return $this->belongsTo(GymModel::class, 'gym_id');
     }
 
     public function vendor()

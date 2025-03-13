@@ -19,7 +19,7 @@ class ExpenseController extends Controller
 {
     public function index(Request $request)
     {
-        $query = ExpenseModel::with('transactions')->where('store_id', auth()->user()->store_id);
+        $query = ExpenseModel::with('transactions')->where('gym_id', auth()->user()->gym_id);
         $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
         $endOfMonth = Carbon::now()->endOfMonth()->toDateString();
         $start_date = $request->start_date ?? $startOfMonth;
@@ -47,19 +47,19 @@ class ExpenseController extends Controller
 
     public function getExpensesCategories()
     {
-        $categories = ExpenseModel::where('store_id', auth()->user()->store_id)
+        $categories = ExpenseModel::where('gym_id', auth()->user()->gym_id)
             ->distinct('category')->pluck('category');
         return response()->json(['categories' => $categories]);
     }
 
     public function show($id)
     {
-        $expense = ExpenseModel::where('store_id', auth()->user()->store_id)
+        $expense = ExpenseModel::where('gym_id', auth()->user()->gym_id)
             ->findOrFail($id);
 
-        $store_id = auth()->user()->store_id;
+        $gym_id = auth()->user()->gym_id;
         $payments = CashTransaction::where('expense_id', $id)
-            ->where('store_id', $store_id)
+            ->where('gym_id', $gym_id)
             ->orderBy('created_at', 'desc')
             ->with(['checkReceivable'])
             ->get()
@@ -86,7 +86,7 @@ class ExpenseController extends Controller
             });
 
         $checkPayments = CheckPayable::where('expense_id', $id)
-            ->where('store_id', $store_id)
+            ->where('gym_id', $gym_id)
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($check) {
@@ -118,8 +118,8 @@ class ExpenseController extends Controller
 
     public function store(ExpenseRequest $request)
     {
-        $storeId = auth()->user()->store_id;
-        $request->merge(['store_id' => $storeId]);
+        $gymId = auth()->user()->gym_id;
+        $request->merge(['gym_id' => $gymId]);
         $expense = ExpenseModel::create($request->all());
 
         if (!empty($request->paymentDetails)) {
@@ -169,14 +169,14 @@ class ExpenseController extends Controller
 
         try {
             $paid_amount = 0;
-            $store_id = auth()->user()->store_id;
+            $gym_id = auth()->user()->gym_id;
             $expense = ExpenseModel::findOrFail($expenseId);
 
             if (!empty($request->paymentDetails['cash'])) {
                 $transaction = new CashTransaction([
                     'expense_id' => $expenseId,
                     'amount' => -$request->paymentDetails['cash'],
-                    'store_id' => $store_id,
+                    'gym_id' => $gym_id,
                     'notes' => 'Cash payment',
                 ]);
                 $paid_amount += $request->paymentDetails['cash'];
@@ -190,14 +190,14 @@ class ExpenseController extends Controller
                     $cashTransaction = new CashTransaction([
                         'check_receivable_id' => $check_receivable->id,
                         'amount' => $check_receivable->amount,
-                        'store_id' => $store_id,
+                        'gym_id' => $gym_id,
                     ]);
                     $cashTransaction->save();
 
                     $cashTransaction = new CashTransaction([
                         'expense_id' => $expenseId,
                         'amount' => -$check_receivable->amount,
-                        'store_id' => $store_id,
+                        'gym_id' => $gym_id,
                         'check_receivable_id' => $check_receivable->id,
                     ]);
 
@@ -218,7 +218,7 @@ class ExpenseController extends Controller
                         'amount' => $check['amount'],
                         'status' => CheckStatusEnum::PENDING,
                         'due_date' => $check['due_date'],
-                        'store_id' => $store_id,
+                        'gym_id' => $gym_id,
                         'expense_id' => $expenseId,
                     ]);
                     $check_payable->save();
@@ -253,16 +253,16 @@ class ExpenseController extends Controller
 
     public function deletePayment($expenseId, $paymentId, Request $request)
     {
-        $store_id = auth()->user()->store_id;
+        $gym_id = auth()->user()->gym_id;
 
         if ($request->type == 'check_payable') {
             $payment = CheckPayable::where('expense_id', $expenseId)
-                ->where('store_id', $store_id)
+                ->where('gym_id', $gym_id)
                 ->where('id', $paymentId)
                 ->first();
         } else {
             $payment = CashTransaction::where('expense_id', $expenseId)
-                ->where('store_id', $store_id)
+                ->where('gym_id', $gym_id)
                 ->where('id', $paymentId)
                 ->first();
         }

@@ -18,7 +18,7 @@ class PurchaseModel extends Model
         'unpaid_amount',
         'notes',
         'date',
-        'store_id',
+        'gym_id',
         'discount',
         'sub_total',
     ];

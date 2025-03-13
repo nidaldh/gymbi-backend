@@ -3,22 +3,23 @@
 namespace App\Models;
 
 use App\Models\Order\OrderModel;
+use App\Models\Subscription\SubscriptionModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class CustomerModel extends Model
+class MemberModel extends Model
 {
     use HasFactory;
 
     protected $connection = 'mysql';
-    protected $table = 'customers';
+    protected $table = 'members';
 
     protected $fillable = [
-        'id',
         'name',
-        'phoneNumber',
-        'createdOn',
-        'store_id',
+        'mobile',
+        'date_of_birth',
+        'gender',
+        'gym_id',
         'debt',
     ];
 
@@ -26,9 +27,9 @@ class CustomerModel extends Model
         'debt' => 'double',
     ];
 
-    public function store()
+    public function gym()
     {
-        return $this->belongsTo(StoreModel::class);
+        return $this->belongsTo(GymModel::class);
     }
 
     public function orders()
@@ -49,6 +50,11 @@ class CustomerModel extends Model
     public function getUnpaidOrdersAmount()
     {
         return $this->orders->sum('unpaid_amount');
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(SubscriptionModel::class, 'member_id');
     }
 
 }

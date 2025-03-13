@@ -16,9 +16,9 @@ class PurchaseController extends Controller
 {
     public function index($vendor_id)
     {
-        $store_id = auth()->user()->store_id;
+        $gym_id = auth()->user()->gym_id;
         $purchases = PurchaseModel::where('vendor_id', $vendor_id)
-            ->where('store_id', $store_id)
+            ->where('gym_id', $gym_id)
             ->orderBy('created_at', 'desc')
             ->get();
         $purchases = $purchases->map(function ($purchase) {
@@ -37,8 +37,8 @@ class PurchaseController extends Controller
 
     public function listAllPurchase()
     {
-        $store_id = auth()->user()->store_id;
-        $purchases = PurchaseModel::where('store_id', $store_id)
+        $gym_id = auth()->user()->gym_id;
+        $purchases = PurchaseModel::where('gym_id', $gym_id)
             ->orderBy('date', 'desc')
             ->get();
         $purchases = $purchases->map(function ($purchase) {
@@ -56,10 +56,10 @@ class PurchaseController extends Controller
 
     public function show($vendor_id, $purchaseId)
     {
-        $store_id = auth()->user()->store_id;
+        $gym_id = auth()->user()->gym_id;
         $purchase = PurchaseModel::where('id', $purchaseId)
             ->where('vendor_id', $vendor_id)
-            ->where('store_id', $store_id)
+            ->where('gym_id', $gym_id)
             ->with('products')->first();
         return response()->json(['purchase' => $purchase]);
     }
@@ -76,8 +76,8 @@ class PurchaseController extends Controller
             'products.*.price' => 'required|numeric',
         ]);
 
-        $store_id = auth()->user()->store_id;
-        $vendor = VendorModel::where('id', $vendor_id)->where('store_id', $store_id)->first();
+        $gym_id = auth()->user()->gym_id;
+        $vendor = VendorModel::where('id', $vendor_id)->where('gym_id', $gym_id)->first();
         if (!$vendor) {
             return response()->json(['message' => 'المورد غير موجود'], 404);
         }
@@ -86,7 +86,7 @@ class PurchaseController extends Controller
         $old_products = [];
         try {
             $data = $request->all();
-            $data['store_id'] = $store_id;
+            $data['gym_id'] = $gym_id;
             $data['vendor_id'] = $vendor_id;
             $data['unpaid_amount'] = $request->total;
             $data['sub_total'] = $request->sub_total ?? $request->total;
@@ -121,7 +121,7 @@ class PurchaseController extends Controller
                                 'type' => 'purchase',
                                 'product_id' => $product->id,
                                 'description' => $description,
-                                'store_id' => $store_id,
+                                'gym_id' => $gym_id,
                                 'user_id' => auth()->user()->id,
                             ]);
                         }
@@ -130,7 +130,7 @@ class PurchaseController extends Controller
                             'name' => $productData['product_name'],
                             'quantity' => $productData['quantity'],
                             'costPrice' => $productData['price'],
-                            'store_id' => $store_id,
+                            'gym_id' => $gym_id,
                         ]);
                         PurchaseOrderProductModel::create([
                             'purchase_order_id' => $purchase->id,
@@ -145,7 +145,7 @@ class PurchaseController extends Controller
                             'type' => 'purchase',
                             'product_id' => $new_product->id,
                             'description' => $description,
-                            'store_id' => $store_id,
+                            'gym_id' => $gym_id,
                             'user_id' => auth()->user()->id,
                         ]);
                     }
@@ -179,9 +179,9 @@ class PurchaseController extends Controller
             'products.*.price' => 'required|numeric',
         ]);
 
-        $store_id = auth()->user()->store_id;
+        $gym_id = auth()->user()->gym_id;
         $purchase = PurchaseModel::where('id', $purchaseId)
-            ->where('store_id', $store_id)
+            ->where('gym_id', $gym_id)
             ->with('products')
             ->first();
 
@@ -190,7 +190,7 @@ class PurchaseController extends Controller
         }
 
         $vendor = VendorModel::where('id', $vendor_id)
-            ->where('store_id', $store_id)
+            ->where('gym_id', $gym_id)
             ->first();
 
         if (!$vendor) {
@@ -238,7 +238,7 @@ class PurchaseController extends Controller
                                         'type' => 'purchase_update',
                                         'product_id' => $product->id,
                                         'description' => "  تم تعديل المنتج من طلبية الشراء: \n {$diff}",
-                                        'store_id' => $store_id,
+                                        'gym_id' => $gym_id,
                                         'user_id' => auth()->user()->id,
                                     ]);
                                 }
@@ -260,7 +260,7 @@ class PurchaseController extends Controller
                                 'type' => 'purchase_remove',
                                 'product_id' => $product->id,
                                 'description' => "تم حذف المنتج من الطلب: {$existingProduct->quantity} {$product->name}",
-                                'store_id' => $store_id,
+                                'gym_id' => $gym_id,
                                 'user_id' => auth()->user()->id,
                             ]);
                         }
@@ -280,16 +280,16 @@ class PurchaseController extends Controller
 
     public function destroy($vendor_id, $purchaseId)
     {
-        $store_id = auth()->user()->store_id;
+        $gym_id = auth()->user()->gym_id;
         $vendor = VendorModel::where('id', $vendor_id)
-            ->where('store_id', $store_id)
+            ->where('gym_id', $gym_id)
             ->first();
         if (!$vendor) {
             return response()->json(['message' => 'المورد غير موجود'], 404);
         }
         $purchase = PurchaseModel::where('id', $purchaseId)
             ->where('vendor_id', $vendor_id)
-            ->where('store_id', $store_id)
+            ->where('gym_id', $gym_id)
             ->with('products')
             ->first();
 
@@ -306,7 +306,7 @@ class PurchaseController extends Controller
                     'type' => 'purchase_delete',
                     'product_id' => $product->product_id,
                     'description' => "تم حذف الطلبية الشراء التي تم من خلالها شراء المنتج",
-                    'store_id' => $store_id,
+                    'gym_id' => $gym_id,
                     'user_id' => auth()->user()->id,
                 ]);
                 $product->delete();

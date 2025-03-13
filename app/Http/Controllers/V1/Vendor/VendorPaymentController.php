@@ -37,13 +37,13 @@ class VendorPaymentController extends Controller
             }
 
             $paid_amount = 0;
-            $store_id = auth()->user()->store_id;
+            $gym_id = auth()->user()->gym_id;
 
             if (!empty($request->paymentDetails['cash'])) {
                 $cashTransaction = new CashTransaction([
                     'vendor_id' => $vendorId,
                     'amount' => -$request->paymentDetails['cash'],
-                    'store_id' => $store_id,
+                    'gym_id' => $gym_id,
                 ]);
                 $paid_amount += $request->paymentDetails['cash'];
                 $cashTransaction->save();
@@ -56,14 +56,14 @@ class VendorPaymentController extends Controller
                     $cashTransaction = new CashTransaction([
                         'check_receivable_id' => $check_receivable->id,
                         'amount' => $check_receivable->amount,
-                        'store_id' => $store_id,
+                        'gym_id' => $gym_id,
                     ]);
                     $cashTransaction->save();
 
                     $cashTransaction = new CashTransaction([
                         'vendor_id' => $vendorId,
                         'amount' => -$check_receivable->amount,
-                        'store_id' => $store_id,
+                        'gym_id' => $gym_id,
                         'check_receivable_id' => $check_receivable->id,
                     ]);
                     $check_receivable->status = CheckStatusEnum::CLEARED;
@@ -83,7 +83,7 @@ class VendorPaymentController extends Controller
                         'status' => CheckStatusEnum::PENDING,
                         'due_date' => $check['due_date'],
                         'vendor_id' => $vendorId,
-                        'store_id' => $store_id,
+                        'gym_id' => $gym_id,
                     ]);
                     $check_payable->save();
                     $paid_amount += $check['amount'];
@@ -131,9 +131,9 @@ class VendorPaymentController extends Controller
 
     public function getPayments($vendorId)
     {
-        $store_id = auth()->user()->store_id;
+        $gym_id = auth()->user()->gym_id;
         $payments = CashTransaction::where('vendor_id', $vendorId)
-            ->where('store_id', $store_id)
+            ->where('gym_id', $gym_id)
             ->orderBy('created_at', 'desc')
             ->with(['checkReceivable'])
             ->get()
@@ -160,7 +160,7 @@ class VendorPaymentController extends Controller
             });
 
         $checkPayments = CheckPayable::where('vendor_id', $vendorId)
-            ->where('store_id', $store_id)
+            ->where('gym_id', $gym_id)
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($check) {
@@ -189,16 +189,16 @@ class VendorPaymentController extends Controller
 
     public function deletePayment($vendorId, $paymentId, Request $request)
     {
-        $store_id = auth()->user()->store_id;
+        $gym_id = auth()->user()->gym_id;
 
         if ($request->type == 'check_payable') {
             $payment = CheckPayable::where('vendor_id', $vendorId)
-                ->where('store_id', $store_id)
+                ->where('gym_id', $gym_id)
                 ->where('id', $paymentId)
                 ->first();
         } else {
             $payment = CashTransaction::where('vendor_id', $vendorId)
-                ->where('store_id', $store_id)
+                ->where('gym_id', $gym_id)
                 ->where('id', $paymentId)
                 ->first();
         }

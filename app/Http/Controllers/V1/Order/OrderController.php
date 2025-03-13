@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\V1\Order;
 
 use App\Enums\CheckStatusEnum;
-use App\Enums\StoreType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\OrderRequest;
 use App\Models\CashTransaction;
 use App\Models\CheckReceivable;
-use App\Models\CustomerModel;
+use App\Models\MemberModel;
 use App\Models\Order\OrderModel;
 use App\Models\Order\OrderProductModel;
 use App\Models\Product\ProductHistory;
@@ -30,7 +29,7 @@ class OrderController extends Controller
 
     public function addOrder(OrderRequest $request)
     {
-        $store_id = auth()->user()->store_id;
+        $gym_id = auth()->user()->gym_id;
 
         DB::beginTransaction();
         $product_subtract_quantity = [];
@@ -39,8 +38,8 @@ class OrderController extends Controller
             $order = new OrderModel([
                 'totalPrice' => $request->totalPrice,
                 'totalDiscount' => $request->totalDiscount,
-                'customerId' => $request->customerId,
-                'store_id' => $store_id,
+                'member_id' => $request->member_id,
+                'gym_id' => $gym_id,
             ]);
 
             $order->save();
@@ -94,7 +93,7 @@ class OrderController extends Controller
 
 
             if (!empty($request->paymentDetails)) {
-                $this->handlePaymentDetails($request->paymentDetails, $order, $store_id);
+                $this->handlePaymentDetails($request->paymentDetails, $order, $gym_id);
             } else {
                 $order->update(['paidAmount' => 0, 'unpaid_amount' => $order->totalPrice]);
             }
@@ -115,17 +114,17 @@ class OrderController extends Controller
         }
     }
 
-    private function handlePaymentDetails($paymentDetails, $order, $store_id): void
+    private function handlePaymentDetails($paymentDetails, $order, $gym_id): void
     {
         $paid_amount = 0;
 
         if (!empty($paymentDetails['cash'])) {
             $cash_data = [
                 'amount' => $paymentDetails['cash'],
-                'store_id' => $store_id,
+                'gym_id' => $gym_id,
             ];
-            if ($order->customerId) {
-                $cash_data['customer_id'] = $order->customerId;
+            if ($order->member_id) {
+                $cash_data['customer_id'] = $order->member_id;
             } else {
                 $cash_data['order_id'] = $order->id;
             }
@@ -143,24 +142,24 @@ class OrderController extends Controller
                     'amount' => $check['amount'],
                     'status' => CheckStatusEnum::PENDING,
                     'due_date' => $check['due_date'],
-                    'customer_id' => $order->customerId,
-                    'store_id' => $store_id,
+                    'customer_id' => $order->member_id,
+                    'gym_id' => $gym_id,
                 ]);
                 $paid_amount += $check['amount'];
                 $check_receivable->save();
             }
         }
 
-        if ($order->customerId) {
-            $customer = CustomerModel::find($order->customerId);
-            $customer->debt += $order->totalPrice;
-            $customer->debt -= $paid_amount;
-            $customer->save();
+        if ($order->member_id) {
+            $member = MemberModel::find($order->member_id);
+            $member->debt += $order->totalPrice;
+            $member->debt -= $paid_amount;
+            $member->save();
         }
         if ($paid_amount > $order->totalPrice) {
             $order->update(['paidAmount' => $order->totalPrice, 'unpaid_amount' => 0]);
             $remaining_amount = $paid_amount - $order->totalPrice;
-            $this->allocateRemainingAmountToOldOrders($order->customerId, $remaining_amount);
+            $this->allocateRemainingAmountToOldOrders($order->member_id, $remaining_amount);
         } else {
             $order->update(
                 ['paidAmount' => $paid_amount, 'unpaid_amount' => $order->totalPrice - $paid_amount]
@@ -168,9 +167,9 @@ class OrderController extends Controller
         }
     }
 
-    private function allocateRemainingAmountToOldOrders($customerId, $remaining_amount): void
+    private function allocateRemainingAmountToOldOrders($member_id, $remaining_amount): void
     {
-        $old_orders = OrderModel::where('customerId', $customerId)
+        $old_orders = OrderModel::where('member_id', $member_id)
             ->where('unpaid_amount', '>', 0)
             ->orderBy('created_at', 'asc')
             ->get();
@@ -207,9 +206,9 @@ class OrderController extends Controller
         } else {
             $endDate = now();
         }
-        $storeId = auth()->user()->store_id;
-        $orders = OrderModel::where('store_id', $storeId)
-            ->with('customer:id,name')
+        $gymId = auth()->user()->gym_id;
+        $orders = OrderModel::where('gym_id', $gymId)
+            ->with('member:id,name')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->orderBy('created_at', 'desc')
             ->get()
@@ -218,7 +217,7 @@ class OrderController extends Controller
                     'id' => $order->id,
                     'totalPrice' => (double)$order->totalPrice,
                     'totalDiscount' => (double)$order->totalDiscount,
-                    'customerName' => $order->customer ? $order->customer->name : null,
+                    'name' => $order->member ? $order->member->name : null,
                     'unpaid_amount' => $order->unpaid_amount,
                     'created_at' => $order->created_at,
                     'totalCost' => $order->totalCost ?? 0,
@@ -230,16 +229,16 @@ class OrderController extends Controller
 
     public function getOrderDetails($id)
     {
-        $storeId = auth()->user()->store_id;
-        $order = OrderModel::with(['customer:id,name', 'orderProducts'])
-            ->where('store_id', $storeId)
+        $gymId = auth()->user()->gym_id;
+        $order = OrderModel::with(['member:id,name', 'orderProducts'])
+            ->where('gym_id', $gymId)
             ->findOrFail($id);
 
         $orderDetails = [
             'id' => $order->id,
             'totalPrice' => (double)$order->totalPrice,
             'totalDiscount' => (double)$order->totalDiscount,
-            'customerName' => $order->customer ? $order->customer->name : null,
+            'name' => $order->member ? $order->member->name : null,
             'unpaid_amount' => $order->unpaid_amount,
             'created_at' => $order->created_at,
             'totalCost' => $order->totalCost ?? 0,
@@ -259,9 +258,9 @@ class OrderController extends Controller
 
     public function deleteOrder($id)
     {
-        $store_id = auth()->user()->store_id;
-        $order = OrderModel::with(['orderProducts', 'cashTransactions', 'customer'])
-            ->where('store_id', $store_id)
+        $gym_id = auth()->user()->gym_id;
+        $order = OrderModel::with(['orderProducts', 'cashTransactions', 'member'])
+            ->where('gym_id', $gym_id)
             ->findOrFail($id);
 
         DB::beginTransaction();
@@ -293,7 +292,7 @@ class OrderController extends Controller
 
                     ProductHistory::create([
                         'product_id' => $product->id,
-                        'store_id' => $store_id,
+                        'gym_id' => $gym_id,
                         'description' => $diff,
                         'user_id' => auth()->user()->id,
                         'type' => 'update'
@@ -302,10 +301,10 @@ class OrderController extends Controller
             }
 
             $order->cashTransactions()->delete();
-            if ($order->customerId) {
-                $customer = CustomerModel::find($order->customerId);
-                $customer->debt -= $order->totalPrice;
-                $customer->save();
+            if ($order->member_id) {
+                $member = MemberModel::find($order->member_id);
+                $member->debt -= $order->totalPrice;
+                $member->save();
             }
 
             $order->delete();
@@ -325,12 +324,12 @@ class OrderController extends Controller
 
     public function updateOrder(OrderRequest $request, $id)
     {
-        $store_id = auth()->user()->store_id;
+        $gym_id = auth()->user()->gym_id;
         DB::beginTransaction();
 
         try {
-            $order = OrderModel::with(['orderProducts', 'customer'])
-                ->where('store_id', $store_id)
+            $order = OrderModel::with(['orderProducts', 'member'])
+                ->where('gym_id', $gym_id)
                 ->findOrFail($id);
             $old_total_price = $order->totalPrice;
 
@@ -339,23 +338,23 @@ class OrderController extends Controller
                 'totalDiscount' => $request->totalDiscount,
             ]);
 
-            if ($order->customerId) {
-                $customer = CustomerModel::find($order->customerId);
+            if ($order->member_id) {
+                $member = MemberModel::find($order->member_id);
 
                 $total_diff = $order->totalPrice - $old_total_price;
                 if ($total_diff > 0) {
-                    $customer->debt += $total_diff;
+                    $member->debt += $total_diff;
                 } else {
-                    $customer->debt -= abs($total_diff);
-                    $this->allocateRemainingAmountToOldOrders($order->customerId, abs($total_diff));
+                    $member->debt -= abs($total_diff);
+                    $this->allocateRemainingAmountToOldOrders($order->member_id, abs($total_diff));
                 }
-                $customer->save();
+                $member->save();
             } else {
                 $total_diff = $order->totalPrice - $old_total_price;
                 if ($total_diff < 0) {
                     CashTransaction::create([
                         'amount' => $total_diff,
-                        'store_id' => $store_id,
+                        'gym_id' => $gym_id,
                         'order_id' => $order->id,
                         'notes' => 'تحديث الطلب'
                     ]);
@@ -395,7 +394,7 @@ class OrderController extends Controller
 
                     ProductHistory::create([
                         'product_id' => $product->id,
-                        'store_id' => $store_id,
+                        'gym_id' => $gym_id,
                         'description' => "تحديث طلبية : تغيير الكمية من {$oldProductQuantity} إلى {$product->quantity}",
                         'user_id' => auth()->user()->id,
                         'type' => 'update'
@@ -415,7 +414,7 @@ class OrderController extends Controller
 
                         ProductHistory::create([
                             'product_id' => $product->id,
-                            'store_id' => $store_id,
+                            'gym_id' => $gym_id,
                             'description' => "إلغاء منتج من الطلبية : تغيير الكمية من {$oldQuantity} إلى {$product->quantity}",
                             'user_id' => auth()->user()->id,
                             'type' => 'update'
@@ -451,7 +450,7 @@ class OrderController extends Controller
             DB::commit();
             return response()->json([
                 'message' => 'تم تحديث الطلب بنجاح',
-                'order' => $order->fresh(['orderProducts', 'customer'])
+                'order' => $order->fresh(['orderProducts', 'member'])
             ]);
         } catch (\Exception $e) {
             DB::rollBack();

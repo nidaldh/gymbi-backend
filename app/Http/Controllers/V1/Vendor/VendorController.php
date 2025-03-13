@@ -10,8 +10,8 @@ class VendorController extends Controller
 {
     public function index()
     {
-        $storeId = auth()->user()->store_id;
-        $vendors = VendorModel::where('store_id', $storeId)
+        $gymId = auth()->user()->gym_id;
+        $vendors = VendorModel::where('gym_id', $gymId)
             ->get()
             ->sortBy(
                 'updated_at',
@@ -23,9 +23,9 @@ class VendorController extends Controller
 
     public function show($id)
     {
-        $storeId = auth()->user()->store_id;
+        $gymId = auth()->user()->gym_id;
 
-        $vendor = VendorModel::where('store_id', $storeId)->
+        $vendor = VendorModel::where('gym_id', $gymId)->
         findOrFail($id)->load('purchases');
 
         return response()->json(['vendor' => $vendor]);
@@ -39,7 +39,7 @@ class VendorController extends Controller
         ]);
 
         $data = $request->all();
-        $data['store_id'] = auth()->user()->store_id;
+        $data['gym_id'] = auth()->user()->gym_id;
 
         $vendor = VendorModel::create($data);
         return response()->json($vendor, 201);
@@ -51,9 +51,9 @@ class VendorController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'phone' => 'sometimes|required|string|max:20',
         ]);
-        $storeId = auth()->user()->store_id;
+        $gymId = auth()->user()->gym_id;
 
-        $vendor = VendorModel::where('store_id', $storeId)->findOrFail($id);
+        $vendor = VendorModel::where('gym_id', $gymId)->findOrFail($id);
         $vendor->update([
             'name' => $request->name,
             'phone' => $request->phone,
@@ -63,8 +63,8 @@ class VendorController extends Controller
 
     public function destroy($id)
     {
-        $storeId = auth()->user()->store_id;
-        $vendor = VendorModel::where('store_id', $storeId)->findOrFail($id);
+        $gymId = auth()->user()->gym_id;
+        $vendor = VendorModel::where('gym_id', $gymId)->findOrFail($id);
         $vendor->delete();
         return response()->json(null, 204);
     }

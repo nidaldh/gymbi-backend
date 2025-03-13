@@ -28,7 +28,7 @@ class ProductModel extends Model
 
     public function getCollection(): string
     {
-        return auth()->user()->store_id . '_products';
+        return auth()->user()->gym_id . '_products';
     }
 
     public function getTable()
