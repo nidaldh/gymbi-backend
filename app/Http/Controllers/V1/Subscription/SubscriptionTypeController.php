@@ -15,14 +15,7 @@ class SubscriptionTypeController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $gymId = $request->query('gym_id');
-        $query = SubscriptionTypeModel::query();
-
-        if ($gymId) {
-            $query->where('gym_id', $gymId);
-        }
-
-        $subscriptionTypes = $query->get();
+        $subscriptionTypes = SubscriptionTypeModel::where('gym_id', auth()->user()->gym_id)->get();
         return response()->json(['subscription_types' => $subscriptionTypes]);
     }
 
@@ -115,20 +108,18 @@ class SubscriptionTypeController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
-        $subscriptionType = SubscriptionTypeModel::findOrFail($id);
-
         $validator = Validator::make($request->all(), [
             'name' => 'string|max:255',
             'description' => 'nullable|string',
             'price' => 'numeric|min:0',
             'duration' => 'integer|min:1',
-            'gym_id' => 'exists:gyms,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-
+        $gym_id = auth()->user()->gym_id;
+        $subscriptionType = SubscriptionTypeModel::where('gym_id', $gym_id)->where('id', $id)->first();
         $subscriptionType->update($request->all());
         return response()->json(['data' => $subscriptionType, 'message' => 'Subscription type updated successfully']);
     }
