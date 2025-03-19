@@ -18,6 +18,7 @@ class CashTransaction extends Model
         'expense_id',
         'check_receivable_id',
         'check_payable_id',
+        'subscription_id',
         'amount',
         'gym_id',
         'vendor_id',

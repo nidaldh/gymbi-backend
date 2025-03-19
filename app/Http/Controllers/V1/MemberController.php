@@ -219,6 +219,7 @@ class MemberController extends Controller
                         'amount' => $request->paymentDetails['cash'],
                         'gym_id' => $gymId,
                         'customer_id' => $memberId,
+                        'subscription_id' => $subscription->id,
                         'notes' => 'Subscription payment'
                     ];
 

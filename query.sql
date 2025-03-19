@@ -465,3 +465,11 @@ ALTER TABLE subscriptions
     ADD COLUMN gym_id BIGINT UNSIGNED NOT NULL AFTER id;
 
 ALTER TABLE subscriptions ADD CONSTRAINT fk_subscriptions_gym_id FOREIGN KEY (gym_id) REFERENCES gyms (id) ON DELETE CASCADE;
+
+alter table cash_transactions
+    drop foreign key fk_cash;
+
+alter table cash_transactions
+    add constraint fk_cash_member_id
+        foreign key (customer_id) references gymbi.members (id)
+            on delete cascade;
