@@ -28,6 +28,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/', [MemberController::class, 'getMemberSubscriptions']);
                 Route::post('/', [MemberController::class, 'addSubscription']);
                 Route::delete('/{subscriptionId}', [MemberController::class, 'deleteSubscription']);
+//                Route::put('/{subscriptionId}/cancel', [MemberController::class, 'cancelSubscription']);
             });
         });
 

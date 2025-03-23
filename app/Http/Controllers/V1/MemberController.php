@@ -12,7 +12,6 @@ use App\Models\Order\OrderModel;
 use App\Models\Subscription\SubscriptionModel;
 use App\Models\Subscription\SubscriptionTypeModel;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Excel;
@@ -55,19 +54,12 @@ class MemberController extends Controller
         $member = MemberModel::findOrFail($id);
 
         $activeSubscriptions = SubscriptionModel::where('member_id', $id)
-//            ->where('start_date', '<=', now()->format('Y-m-d'))
             ->where('end_date', '>=', now()->format('Y-m-d'))
             ->with('subscriptionType')
             ->get();
 
         $activeSubscriptions = $activeSubscriptions->map(function ($subscription) {
-            return [
-                'id' => $subscription->id,
-                'name' => $subscription->subscriptionType->name,
-                'start_date' => $subscription->start_date,
-                'end_date' => $subscription->end_date,
-                'price' => $subscription->price,
-            ];
+            return $this->mapSubscription($subscription);
         });
 
         return response()->json([
@@ -302,17 +294,42 @@ class MemberController extends Controller
     public function deleteSubscription($memberId, $subscriptionId)
     {
         $gymId = auth()->user()->gym_id;
-        $member = MemberModel::where('gym_id', $gymId)->findOrFail($memberId);
 
-        $subscription = SubscriptionModel::where('member_id', $memberId)
-            ->findOrFail($subscriptionId);
+        DB::beginTransaction();
 
-        // Check if we should update the debt
-        $price = $subscription->price;
+        try {
+            $member = MemberModel::where('gym_id', $gymId)->findOrFail($memberId);
 
-        $subscription->delete();
+            $subscription = SubscriptionModel::where('member_id', $memberId)
+                ->findOrFail($subscriptionId);
 
-        return response()->json(['message' => 'Subscription deleted successfully'], 200);
+            $refund = $subscription->price;
+            if ($member->debt >= $refund) {
+                $member->debt = $member->debt - $refund;
+            } else {
+                $refund = $refund - $member->debt;
+                $member->debt = 0;
+                $refund_data = [
+                    'amount' => -$refund,
+                    'gym_id' => $gymId,
+                    'customer_id' => $memberId,
+                    'notes' => 'ارجاع مبلغ مقابل مسح الاشتراك'
+                ];
+                $cashTransaction = new CashTransaction($refund_data);
+                $cashTransaction->save();
+            }
+            $member->save();
+            $subscription->delete();
+
+            DB::commit();
+
+            return response()->json(['message' => 'Subscription deleted successfully'], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Error deleting subscription: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function getMemberSubscriptions($memberId)
@@ -325,11 +342,73 @@ class MemberController extends Controller
             ->orderBy('start_date', 'desc')
             ->get();
 
+        $subscriptions = $subscriptions->map(function ($subscription) {
+            return $this->mapSubscription($subscription);
+        });
+
         return response()->json([
             'member' => $member,
             'subscriptions' => $subscriptions
         ], 200);
     }
 
+    private function mapSubscription($subscription)
+    {
+        return [
+            'id' => $subscription->id,
+            'name' => $subscription->subscriptionType->name,
+            'start_date' => $subscription->start_date,
+            'end_date' => $subscription->end_date,
+            'price' => $subscription->price,
+            'status' => $subscription->status,
+        ];
+    }
+
+    public function cancelSubscription($memberId, $subscriptionId, Request $request)
+    {
+        $gymId = auth()->user()->gym_id;
+
+        DB::beginTransaction();
+
+        try {
+            // Verify member exists and belongs to this gym
+            $member = MemberModel::where('gym_id', $gymId)->findOrFail($memberId);
+
+            // Find subscription and verify it belongs to this member
+            $subscription = SubscriptionModel::where('member_id', $memberId)
+                ->where('id', $subscriptionId)
+                ->findOrFail($subscriptionId);
+
+            // Only allow cancellation of active subscriptions
+            if ($subscription->status !== SubscriptionModel::STATUS_ACTIVE) {
+                DB::rollBack();
+                return response()->json([
+                    'message' => 'Only active subscriptions can be cancelled'
+                ], 400);
+            }
+
+//            //refund_amount
+//            if($request->refund_amount > 0){
+////               return cash to member
+//
+//
+//            }
+
+            // Update status to cancelled
+            $subscription->save();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Subscription cancelled successfully',
+                'subscription' => $subscription
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Error cancelling subscription: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
 }

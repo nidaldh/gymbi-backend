@@ -12,6 +12,10 @@ class SubscriptionModel extends Model
 {
     use HasFactory;
 
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_CANCELLED = 'cancelled';
+
     protected $table = 'subscriptions';
 
     protected $fillable = [
@@ -21,10 +25,12 @@ class SubscriptionModel extends Model
         'end_date',
         'price',
         'gym_id',
+        'status',
     ];
 
     protected $casts = [
         'price' => 'double',
+        'status' => 'string',
     ];
 
     /**
@@ -42,7 +48,6 @@ class SubscriptionModel extends Model
     {
         return $this->belongsTo(SubscriptionTypeModel::class, 'subscription_type');
     }
-
 
     public function gym(): BelongsTo
     {

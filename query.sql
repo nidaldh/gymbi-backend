@@ -448,9 +448,9 @@ create index vendor_id
 # add column to store table to enable/disable features
 # checks, vendors, expenses, customers, cash_transactions
 ALTER TABLE gyms
-    ADD COLUMN enable_checks BOOLEAN DEFAULT 0 AFTER product_attributes,
-    ADD COLUMN enable_vendors BOOLEAN DEFAULT 0 AFTER enable_checks,
-    ADD COLUMN enable_expenses BOOLEAN DEFAULT 0 AFTER enable_vendors,
+    ADD COLUMN enable_checks            BOOLEAN DEFAULT 0 AFTER product_attributes,
+    ADD COLUMN enable_vendors           BOOLEAN DEFAULT 0 AFTER enable_checks,
+    ADD COLUMN enable_expenses          BOOLEAN DEFAULT 0 AFTER enable_vendors,
     ADD COLUMN enable_cash_transactions BOOLEAN DEFAULT 0 AFTER enable_customers;
 
 # add enable_product_attributes column to store table
@@ -464,7 +464,8 @@ ALTER TABLE gyms
 ALTER TABLE subscriptions
     ADD COLUMN gym_id BIGINT UNSIGNED NOT NULL AFTER id;
 
-ALTER TABLE subscriptions ADD CONSTRAINT fk_subscriptions_gym_id FOREIGN KEY (gym_id) REFERENCES gyms (id) ON DELETE CASCADE;
+ALTER TABLE subscriptions
+    ADD CONSTRAINT fk_subscriptions_gym_id FOREIGN KEY (gym_id) REFERENCES gyms (id) ON DELETE CASCADE;
 
 alter table cash_transactions
     drop foreign key fk_cash;
@@ -473,3 +474,8 @@ alter table cash_transactions
     add constraint fk_cash_member_id
         foreign key (customer_id) references gymbi.members (id)
             on delete cascade;
+
+
+# add status to subscription ( active, completed,cancelled)
+alter table subscriptions
+    add column status enum ('active', 'completed', 'cancelled') default 'active';
